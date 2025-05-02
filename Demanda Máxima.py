@@ -42,7 +42,7 @@ df_atributos.dropna(subset=['Cód. do Trafo/Alimentador'], inplace=True)
 print(df_atributos)
 df_dados_tecnicos=df_atributos
 mes=1
-anos = range(2024,2025)
+anos = range(2024,2026)
 meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 colunas_meses_anos = [f'{mes} {ano}' for ano in anos for mes in meses]
 df_meses_anos = pd.DataFrame(index=df_dados_tecnicos.index,columns=colunas_meses_anos)
@@ -53,7 +53,7 @@ print("DF_DADOS_COM_MESES_ANOS")
 print(df_dados_com_meses_anos)
 
 df_valores_maximo_P = pd.DataFrame(columns = ['Cód. do Trafo/Alimentador'] + colunas_meses_anos)
-for ano in range (2024,2025):
+for ano in range (2024,2026):
     df_filtrado_ano = df_base[df_base["ANO"]==ano]
     for mes in range (1,13):
          if mes in df_filtrado_ano['MES'].values:
@@ -284,6 +284,11 @@ excluir_colunas_S= ['Descrição', 'Cód. de Ident', 'Cód. do Trafo/Alimentador
 colunas_para_calcular_S = df_dados_com_meses_anos_S.drop(columns=excluir_colunas_S, errors='ignore')
 colunas_numericas_S = colunas_para_calcular_S.apply(pd.to_numeric, errors='coerce')
 df_dados_com_meses_anos_S['Pot. Aparente'] = colunas_numericas_S.max(axis=1).round(2)
+
+# Calcular o carregamento usando a potência aparente máxima
+df_dados_com_meses_anos_S['Carregamento'] = (df_dados_com_meses_anos_S['Pot. Aparente'] / df_dados_com_meses_anos_S['Potencia Instalada'].where(df_dados_com_meses_anos_S['Potencia Instalada'] > 0, other=1))*100
+df_dados_com_meses_anos_S['Carregamento'] = df_dados_com_meses_anos_S['Carregamento'].fillna(0).round(2)
+
 non_numeric_columns = df_dados_com_meses_anos_S.select_dtypes(exclude=[np.number]).columns
 df_dados_com_meses_anos_S.set_index('Cód. do Trafo/Alimentador')
 print(df_dados_com_meses_anos_S)

@@ -9,11 +9,11 @@ import os
 
 st.set_page_config(page_title="Operação",page_icon='icone',layout='wide')
 # Carregar os dados do Excel
-url = r"Demanda_Máxima_Semana.xlsx"
+url = "Demanda_Máxima_Semana.xlsx"
 df = pd.read_excel(url, sheet_name="Potência Ativa")
 
 # Carregar dados de demanda máxima
-url_demanda_maxima = r"Demanda_Máxima_Não_Coincidente.xlsx"
+url_demanda_maxima = "Demanda_Máxima_Não_Coincidente.xlsx"
 df_demanda_maxima = pd.read_excel(url_demanda_maxima, sheet_name="Potência Aparente")
 
 # Título da aplicação
@@ -225,7 +225,7 @@ st.download_button(
 st.markdown("---")
 st.subheader("Demanda Máxima Mensal")
 #abrir o arquivo excel de demanda máxima mensal
-url_demanda_maxima_mensal = r"Demanda_Máxima_Não_Coincidente.xlsx"
+url_demanda_maxima_mensal = "Demanda_Máxima_Não_Coincidente.xlsx"
 df_demanda_maxima_mensal = pd.read_excel(url_demanda_maxima_mensal, sheet_name="Potência Aparente")
 
 #criar banco de dados sqlite

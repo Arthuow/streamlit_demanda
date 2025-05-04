@@ -21,17 +21,14 @@ st.title("Potência Máxima Semanal - kVA")
 
 # Obter lista de códigos e ajustar formato se necessário
 codigos_unicos = df['Cód. do Trafo/Alimentador'].unique()
-codigos_ajustados = [f"AL-{cod}" if not str(cod).startswith('AL-') else str(cod) for cod in codigos_unicos]
-codigos_ajustados.sort()
+
 
 # Selecionar o transformador ou alimentador
-selecao = st.selectbox("Selecione o Cód. do Trafo/Alimentador:", codigos_ajustados, index=1)
+selecao = st.selectbox("Selecione o Cód. do Trafo/Alimentador:", codigos_unicos, index=1)
 
-# Remover o prefixo AL- para buscar no DataFrame original
-selecao_original = selecao.replace('AL-', '') if selecao.startswith('AL-') else selecao
 
 # Filtrar os dados com base na seleção
-df_filtrado = df[df['Cód. do Trafo/Alimentador'] == selecao_original]
+df_filtrado = df[df['Cód. do Trafo/Alimentador'] == selecao]
 
 # Verificar se há dados para o transformador ou alimentador selecionado
 if not df_filtrado.empty:
@@ -67,7 +64,7 @@ if not df_filtrado.empty:
             codigo_ajustado = f"AL-{selecao}" if not selecao.startswith('AL-') else selecao
             
             # Verificar se existem dados para o transformador/alimentador selecionado
-            dados_potencia = df_demanda_maxima.loc[df_demanda_maxima['Cód. do Trafo/Alimentador'] == codigo_ajustado, 'Potencia Instalada']
+            dados_potencia = df_demanda_maxima.loc[df_demanda_maxima['Cód. do Trafo/Alimentador'] == selecao, 'Potencia Instalada']
             
             if not dados_potencia.empty:
                 potencia_instalada = dados_potencia.iloc[0]
@@ -135,13 +132,9 @@ if not df_filtrado.empty:
 
     else:
         st.warning("Não há dados numéricos válidos para plotar o gráfico.")
-else:
-    st.warning("Nenhum dado encontrado para o Cód. do Trafo/Alimentador selecionado.")
 
 st.markdown("---")
 
-# Exibir tabela de demanda máxima
-st.subheader("Demanda Máxima Não Coincidente")
 
 # Filtrar os dados com o código original (sem AL-)
 df_demanda_maxima_filtrado = df_demanda_maxima[df_demanda_maxima['Cód. do Trafo/Alimentador'] == selecao].copy()
@@ -165,64 +158,7 @@ if not df_demanda_maxima_filtrado.empty:
         valores = pd.to_numeric(df_demanda_maxima_filtrado[col], errors='coerce')
         df_formatado[col] = valores.apply(lambda x: '{:,.0f}'.format(x).replace(',', '.').replace('.', ',', 1) if pd.notnull(x) else "")
 
-    # Criar HTML para a tabela
-    html = """
-    <style>
-        .dataframe {
-            width: 90%;
-            border-collapse: collapse;
-        }
-        .dataframe th, .dataframe td {
-            padding: 4px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-        .dataframe th {
-            background-color: #f2f2f2;
-        }
-        .dataframe tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .dataframe td {
-            white-space: nowrap;
-        }
-    </style>
-    <table class="dataframe">
-    """
 
-    # Adicionar cabeçalho
-    html += "<tr>"
-    for col in df_formatado.columns:
-        html += f"<th>{col}</th>"
-    html += "</tr>"
-
-    # Adicionar dados
-    for _, row in df_formatado.iterrows():
-        html += "<tr>"
-        for col in df_formatado.columns:
-            html += f"<td>{row[col]}</td>"
-        html += "</tr>"
-
-    html += "</table>"
-
-    # Exibir a tabela HTML
-    st.markdown(html, unsafe_allow_html=True)
-else:
-    st.warning(f"Não foram encontrados dados para o equipamento {selecao}")
-
-# Botão de exportação
-buffer = io.StringIO()
-df.to_csv(buffer, sep=';', encoding='latin-1', index=False)
-buffer.seek(0)
-file_name = f"{selecao}_Demanda_Maxima_Semanal.csv"
-
-st.download_button(
-    label="📥 Downloads - Todos os dados",
-    data=buffer.getvalue(),
-    file_name=file_name,
-    mime="text/csv")
-
-st.markdown("---")
 st.subheader("Demanda Máxima Mensal")
 #abrir o arquivo excel de demanda máxima mensal
 url_demanda_maxima_mensal = "Demanda_Máxima_Não_Coincidente.xlsx"

@@ -14,11 +14,25 @@ import plotly.graph_objects as go
 import gc
 from datetime import datetime, timedelta
 import io
+import logging
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('demanda.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Configuração da página Streamlit - DEVE SER A PRIMEIRA CHAMADA STREAMLIT
+st.set_page_config(page_title="Energisa Mato Grosso", page_icon='icone', layout='wide')
 
 @st.cache_data
 def importa_base():
-    print("Importando Base de Dados Agrupada\n")
+    logger.info("Importando Base de Dados Agrupada")
     try:
         # Read the CSV file
         df_base = pd.read_csv("Medição Agrupada.csv", sep=";", encoding='latin-1')
@@ -29,86 +43,118 @@ def importa_base():
         # Set the index
         df_base = df_base.set_index(['DATA_HORA'])
         
-        print(df_base)
-        print("\nImportação Concluída")
+        logger.info("Importação da base concluída com sucesso")
         return df_base
     except Exception as e:
+        logger.error(f"Erro ao importar base de dados: {str(e)}")
         st.error(f"Erro ao importar base de dados: {str(e)}")
         return None
 
 df_equipamentos = None
+@st.cache_data
 def importar_base_equipamentos():
     global df_equipamentos
     if df_equipamentos is None:
-        print("Importando base de equipamentos:")
+        logger.info("Importando base de equipamentos")
         #url_equipamentos = r"C:\Users\Engeselt\Documents\Códigos dos Equipamentos.xlsx"
         df_equipamentos = pd.read_excel('Códigos dos Equipamentos.xlsx', sheet_name='Códigos dos Equipamentos')
         df_equipamentos['Descricao'] = df_equipamentos['Descricao'].astype(str)
-        print(df_equipamentos)
-        print("\nImportação Concluída")
-        df_equipamentos.info()
+        logger.info("Importação da base de equipamentos concluída")
+        return df_equipamentos
 
 ########################################################################################################################
 # LENDO ARQUIVO EM EXCEL
 #url_atributos = r"C:\Users\Engeselt\Documents\Tabela informativa.xlsx"
 
-df_atributos = pd.read_excel('Tabela informativa.xlsx',sheet_name = "Dados")
-df_atributos.dropna(subset=['Codigo'], inplace=True)
-df_dados_tecnicos = pd.read_excel('Tabela informativa.xlsx',sheet_name='Dados Técnicos')
-df_dados_tecnicos['Cód. do Trafo/Alimentador'] = df_dados_tecnicos['Cód. do Trafo/Alimentador'].astype(str)
+try:
+    logger.info("Iniciando leitura do arquivo Tabela informativa.xlsx")
+    df_atributos = pd.read_excel('Tabela informativa.xlsx',sheet_name = "Dados")
+    df_atributos.dropna(subset=['Codigo'], inplace=True)
+    df_dados_tecnicos = pd.read_excel('Tabela informativa.xlsx',sheet_name='Dados Técnicos')
+    df_dados_tecnicos['Cód. do Trafo/Alimentador'] = df_dados_tecnicos['Cód. do Trafo/Alimentador'].astype(str)
+    logger.info("Arquivo Tabela informativa.xlsx lido com sucesso")
+except Exception as e:
+    logger.error(f"Erro ao ler arquivo Tabela informativa.xlsx: {str(e)}")
+    st.error(f"Erro ao ler arquivo Tabela informativa.xlsx: {str(e)}")
+    st.stop()
+
 print("\n Tabela para realizar o procv importada")
 print(df_dados_tecnicos)
 
 importar_base_equipamentos()
 
-st.set_page_config(page_title="Energisa Mato Grosso",page_icon='icone',layout='wide')
+# Interface do usuário
 st.header('Energisa Mato Grosso - ASPO')
 st.markdown("Assessoria de Planejamento e Orçamento")
+
+# Importar base de equipamentos
+df_equipamentos = importar_base_equipamentos()
+if df_equipamentos is None:
+    st.error("Não foi possível carregar a base de equipamentos")
+    st.stop()
+
+# Interface do usuário
 st.sidebar.header("Equipamento Elétrico")
-selecao = st.sidebar.selectbox("Selecione um Equipamento", df_equipamentos,index=1)
+selecao = st.sidebar.selectbox("Selecione um Equipamento", df_equipamentos, index=1)
 
-print(selecao)
-if type(selecao) == int:
-    print("A variável é um inteiro.")
-elif type(selecao) == str:
-    print("A variável é uma string.")
+# Verificar se selecao é válido
+if selecao is None:
+    st.error("Por favor, selecione um equipamento válido")
+    st.stop()
 
-selecao_str = str(selecao)
-EAE = selecao_str + '-EAE'
-print(EAE)
-if type(EAE) == int:
-    print("A variável é um inteiro.")
-elif type(EAE) == str:
-    print("A variável é uma string.")
-EAR = selecao + '-EAR'
-ERE = selecao + '-ERE'
-ERR = selecao + '-ERR'
+# Processamento dos dados
+try:
+    selecao_str = str(selecao)
+    EAE = selecao_str + '-EAE'
+    EAR = selecao_str + '-EAR'
+    ERE = selecao_str + '-ERE'
+    ERR = selecao_str + '-ERR'
+    logger.info(f"Processando equipamento: {selecao_str}")
+except Exception as e:
+    logger.error(f"Erro ao processar seleção do equipamento: {str(e)}")
+    st.error("Erro ao processar seleção do equipamento")
+    st.stop()
 
-potencia_instalada =df_dados_tecnicos.loc[df_dados_tecnicos['Cód. do Trafo/Alimentador']==selecao_str,'Potencia Instalada'].values[0]
-print('Potencia Instalada:',potencia_instalada)
+try:
+    potencia_instalada = df_dados_tecnicos.loc[df_dados_tecnicos['Cód. do Trafo/Alimentador']==selecao_str,'Potencia Instalada'].values[0]
+    logger.info(f"Potência instalada para {selecao_str}: {potencia_instalada}")
+except Exception as e:
+    logger.error(f"Erro ao obter potência instalada: {str(e)}")
+    st.error(f"Erro ao obter potência instalada para o equipamento selecionado")
+    st.stop()
 
 ###Potencia Ativa#####
 
-indice_entrada = df_atributos.loc[df_atributos['Codigo'] == EAE, 'Codigo'].index[0]
-print(indice_entrada)
-descricao = (df_atributos.loc[indice_entrada, 'descricao'])
-descricao=str(descricao)
+try:
+    indice_entrada = df_atributos.loc[df_atributos['Codigo'] == EAE, 'Codigo'].index[0]
+    print(indice_entrada)
+    descricao = (df_atributos.loc[indice_entrada, 'descricao'])
+    descricao=str(descricao)
 
-print(descricao)
-indice_saida = df_atributos.loc[df_atributos['Codigo'] == EAR, 'Codigo'].index[0]
-print(indice_entrada)
-descricao_saida = df_atributos.loc[indice_saida, 'descricao']
-descricao_saida=str(descricao_saida)
-print(descricao_saida)
+    print(descricao)
+    indice_saida = df_atributos.loc[df_atributos['Codigo'] == EAR, 'Codigo'].index[0]
+    print(indice_entrada)
+    descricao_saida = df_atributos.loc[indice_saida, 'descricao']
+    descricao_saida=str(descricao_saida)
+    print(descricao_saida)
+except Exception as e:
+    logger.error(f"Erro ao processar descrições: {str(e)}")
+    st.error("Erro ao processar dados do equipamento")
+    st.stop()
 
 ####Potencia Reativa#####
 
-indice_entrada_Q = df_atributos.loc[df_atributos['Codigo'] == ERE, 'Codigo'].index[0]
-descricao_Q = (df_atributos.loc[indice_entrada_Q, 'descricao'])
-descricao_Q=str(descricao_Q)
-indice_saida_Q = df_atributos.loc[df_atributos['Codigo'] == ERR, 'Codigo'].index[0]
-descricao_saida_Q = df_atributos.loc[indice_saida_Q, 'descricao']
-descricao_saida_Q=str(descricao_saida_Q)
+try:
+    indice_entrada_Q = df_atributos.loc[df_atributos['Codigo'] == ERE, 'Codigo'].index[0]
+    descricao_Q = (df_atributos.loc[indice_entrada_Q, 'descricao'])
+    descricao_Q=str(descricao_Q)
+    indice_saida_Q = df_atributos.loc[df_atributos['Codigo'] == ERR, 'Codigo'].index[0]
+    descricao_saida_Q = df_atributos.loc[indice_saida_Q, 'descricao']
+    descricao_saida_Q=str(descricao_saida_Q)
+except Exception as e:
+    logger.error(f"Erro ao processar descrições: {str(e)}")
+    st.error("Erro ao processar dados do equipamento")
+    st.stop()
 
 base=importa_base()
 if base is None:
@@ -120,17 +166,15 @@ data_d_minus_1 = datetime.today() - timedelta(days=1)
 base = base[base.index < data_d_minus_1]
 
 base = pd.DataFrame(base,columns=[descricao,descricao_saida,descricao_Q,descricao_saida_Q])
-base[descricao] = base[descricao].astype(float)
-base[descricao_saida] = base[descricao_saida].astype(float)
-base[descricao_Q] = base[descricao_Q].astype(float)
-base[descricao_saida_Q] = base[descricao_saida_Q].astype(float)
+for col in [descricao, descricao_saida, descricao_Q, descricao_saida_Q]:
+    base[col] = pd.to_numeric(base[col], errors='coerce')
 base['P'] = base[descricao]-base[descricao_saida]
 base['PQ'] = base[descricao_Q]-base[descricao_saida_Q]
 base['S'] = np.sqrt((base['P']**2)+(base['PQ']**2))
 base['fp'] = base['P']/base['S']
 base['ultrapassagem'] = base['S']/potencia_instalada >= 1.00
 base['ultrapassagem'] = base['ultrapassagem'].astype(int)
-print(base)
+
 valor_maximo_P = max(base['P'])
 valor_maximo_S = max(base['S'])
 valor_maximo_S = round(float(valor_maximo_S),2)
@@ -139,13 +183,13 @@ valor_media_p = round(np.mean(base['P']),0)
 print(valor_media_p)
 
 dados_sem_zeros = np.array([x for x in base['P'] if x!=0]).astype(int)
-print("Dados sem o zero\n", dados_sem_zeros)
+
 
 valor_minimo_P_sem_zero = min(dados_sem_zeros).astype(int)
-print("Valor Minimo sem o zero:\n",valor_minimo_P_sem_zero)
+
 
 desvio_padrao_P = int(np.std(dados_sem_zeros))
-print("desvio Padrão: ",desvio_padrao_P)
+
 
 minimo_desvio = round(valor_media_p-3.0*desvio_padrao_P,0)
 print("Valor minimo por desvio padrão:",minimo_desvio )

@@ -16,13 +16,24 @@ st.markdown("Assessoria de Planejamento e Orçamento")
 @st.cache_data
 def load_initial_data():
     try:
-        df_atributos = pd.read_excel('Tabela informativa.xlsx', sheet_name="Dados")
+        # Ajustando o caminho para a pasta raiz
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        excel_path = os.path.join(root_dir, 'Tabela informativa.xlsx')
+        
+        # Explicitly specify the engine as 'openpyxl'
+        df_atributos = pd.read_excel(excel_path, sheet_name="Dados", engine='openpyxl')
         df_atributos.dropna(subset=['Codigo'], inplace=True)
-        df_dados_tecnicos = pd.read_excel('Tabela informativa.xlsx', sheet_name='Dados Técnicos')
+        
+        df_dados_tecnicos = pd.read_excel(excel_path, sheet_name='Dados Técnicos', engine='openpyxl')
         df_dados_tecnicos['Cód. do Trafo/Alimentador'] = df_dados_tecnicos['Cód. do Trafo/Alimentador'].astype(str)
-        df_atributos_Dados = pd.read_excel('Tabela informativa.xlsx', sheet_name="Dados")
+        
+        df_atributos_Dados = pd.read_excel(excel_path, sheet_name="Dados", engine='openpyxl')
         df_atributos_Dados.dropna(subset=['Codigo'], inplace=True)
+        
         return df_atributos, df_dados_tecnicos, df_atributos_Dados
+    except FileNotFoundError:
+        st.error("Arquivo 'Tabela informativa.xlsx' não encontrado. Por favor, certifique-se de que o arquivo está na pasta raiz do projeto.")
+        return None, None, None
     except Exception as e:
         st.error(f"Erro ao carregar arquivos: {str(e)}")
         return None, None, None
@@ -36,9 +47,13 @@ if df_atributos is None:
 @st.cache_data
 def load_measurement_data(data_hora):
     try:
+        # Ajustando o caminho para a pasta raiz
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        csv_path = os.path.join(root_dir, "Medição Agrupada.csv")
+        
         # Ler apenas a linha específica do CSV
         df_base_original = pd.read_csv(
-            "Medição Agrupada.csv", 
+            csv_path, 
             sep=";", 
             encoding='latin-1',
             parse_dates=['DATA_HORA']

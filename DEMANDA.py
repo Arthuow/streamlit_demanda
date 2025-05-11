@@ -16,9 +16,7 @@ from datetime import datetime, timedelta
 import io
 
 
-df_maxima = pd.read_excel(r"C:\Users\Engeselt\Documents\GitHub\streamlit_demanda\Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente",engine="openpyxl")
-    
-
+df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente")
 
 @st.cache_data
 def importa_base():

@@ -15,35 +15,21 @@ import gc
 from datetime import datetime, timedelta
 import io
 
-# Definindo o caminho da pasta raiz
-root_dir = os.path.dirname(os.path.abspath(__file__))
 
-try:
-    excel_path = os.path.join(root_dir, "Demanda_Máxima_Não_Coincidente_Historica.xlsx")
-    df_maxima = pd.read_excel(excel_path, sheet_name="Potência Aparente", engine='openpyxl')
-except FileNotFoundError:
-    st.error("Arquivo 'Demanda_Máxima_Não_Coincidente_Historica.xlsx' não encontrado. Por favor, certifique-se de que o arquivo está na pasta raiz do projeto.")
-    df_maxima = pd.DataFrame()  # Create an empty DataFrame as fallback
-except Exception as e:
-    st.error(f"Erro ao carregar o arquivo: {str(e)}")
-    df_maxima = pd.DataFrame()  # Create an empty DataFrame as fallback
+df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente")
 
 @st.cache_data
 def importa_base():
     print("Importando Base de Dados Agrupada\n")
     try:
-        # Ler o arquivo CSV
-        csv_path = os.path.join(root_dir, "Medição Agrupada.csv")
-        df_base = pd.read_csv(csv_path, sep=";", encoding='latin-1')
+        # Read the CSV file
+        df_base = pd.read_csv("Medição Agrupada.csv", sep=";", encoding='latin-1')
         
-        # Converter a coluna DATA_HORA para datetime
-        df_base['DATA_HORA'] = pd.to_datetime(df_base['DATA_HORA'], errors='coerce')
+        # Convert DATA_HORA to datetime with flexible parsing
+        df_base['DATA_HORA'] = pd.to_datetime(df_base['DATA_HORA'], format='mixed')
         
-        # Remover linhas com datas inválidas
-        df_base = df_base.dropna(subset=['DATA_HORA'])
-        
-        # Definir DATA_HORA como índice
-        df_base.set_index('DATA_HORA', inplace=True)
+        # Set the index
+        df_base = df_base.set_index(['DATA_HORA'])
         
         print(df_base)
         print("\nImportação Concluída")
@@ -57,8 +43,8 @@ def importar_base_equipamentos():
     global df_equipamentos
     if df_equipamentos is None:
         print("Importando base de equipamentos:")
-        excel_path = os.path.join(root_dir, 'Códigos dos Equipamentos.xlsx')
-        df_equipamentos = pd.read_excel(excel_path, sheet_name='Códigos dos Equipamentos', engine='openpyxl')
+        #url_equipamentos = r"C:\Users\Engeselt\Documents\Códigos dos Equipamentos.xlsx"
+        df_equipamentos = pd.read_excel('Códigos dos Equipamentos.xlsx', sheet_name='Códigos dos Equipamentos')
         df_equipamentos['Descricao'] = df_equipamentos['Descricao'].astype(str)
         print(df_equipamentos)
         print("\nImportação Concluída")
@@ -66,10 +52,10 @@ def importar_base_equipamentos():
 
 ########################################################################################################################
 # LENDO ARQUIVO EM EXCEL
-excel_path = os.path.join(root_dir, 'Tabela informativa.xlsx')
-df_atributos = pd.read_excel(excel_path, sheet_name="Dados", engine='openpyxl')
+#url_atributos = r"C:\Users\Engeselt\Documents\Tabela informativa.xlsx"
+df_atributos = pd.read_excel('Tabela informativa.xlsx',sheet_name = "Dados")
 df_atributos.dropna(subset=['Codigo'], inplace=True)
-df_dados_tecnicos = pd.read_excel(excel_path, sheet_name='Dados Técnicos', engine='openpyxl')
+df_dados_tecnicos = pd.read_excel('Tabela informativa.xlsx',sheet_name='Dados Técnicos')
 df_dados_tecnicos['Cód. do Trafo/Alimentador'] = df_dados_tecnicos['Cód. do Trafo/Alimentador'].astype(str)
 print("\n Tabela para realizar o procv importada")
 print(df_dados_tecnicos)
@@ -126,6 +112,11 @@ descricao_saida_Q = df_atributos.loc[indice_saida_Q, 'descricao']
 descricao_saida_Q=str(descricao_saida_Q)
 
 base=importa_base()
+if base is None:
+    st.error("Não foi possível carregar a base de dados. Por favor, verifique o arquivo CSV.")
+    st.stop()
+
+base.index = pd.to_datetime(base.index, format='mixed')
 data_d_minus_1 = datetime.today() - timedelta(days=1)
 base = base[base.index < data_d_minus_1]
 
@@ -300,26 +291,23 @@ else:
 
 st.subheader('Gráfico da Máxima Demanda Histórica')
 # Seleção do trafo/alimentador
-if not df_maxima.empty:
-    filtered_data = df_maxima[df_maxima['Cód. do Trafo/Alimentador'] == selecao_2]
-    mes_atual = datetime.now()
-    mes_columns = [col for col in filtered_data.columns if col.split()[0] in ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']]
+filtered_data = df_maxima[df_maxima['Cód. do Trafo/Alimentador'] == selecao_2]
+mes_atual = datetime.now()
+mes_columns = [col for col in filtered_data.columns if col.split()[0] in ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']]
 
-    # Converter as colunas de meses para números (float)
-    for col in mes_columns:
-        filtered_data.loc[:, col] = pd.to_numeric(filtered_data[col], errors='coerce')
+# Converter as colunas de meses para números (float)
+for col in mes_columns:
+    filtered_data.loc[:, col] = pd.to_numeric(filtered_data[col], errors='coerce')
 
-    # Derreter os dados apenas nas colunas de meses
-    filtered_data_melted = filtered_data.melt(id_vars=['Descrição', 'Cód. do Trafo/Alimentador'], value_vars=mes_columns, var_name='Mês', value_name='Valor')
+# Derreter os dados apenas nas colunas de meses
+filtered_data_melted = filtered_data.melt(id_vars=['Descrição', 'Cód. do Trafo/Alimentador'], value_vars=mes_columns, var_name='Mês', value_name='Valor')
 
-    # Criar o gráfico de barras usando Plotly Express
-    fig3 = px.bar(filtered_data_melted, x='Mês', y='Valor', color='Cód. do Trafo/Alimentador', text='Valor', title=f'Gráfico de Barras para {selecao}')
+# Criar o gráfico de barras usando Plotly Express
+fig3 = px.bar(filtered_data_melted, x='Mês', y='Valor', color='Cód. do Trafo/Alimentador', text='Valor', title=f'Gráfico de Barras para {selecao}')
 
-    fig3.update_layout(xaxis_title="Meses",yaxis_title="Carregamento (%)",width=1500, height=680)
-    # Mostrar o gráfico usando Streamlit
-    st.plotly_chart(fig3)
-else:
-    st.warning("Não foi possível carregar os dados históricos de demanda máxima.")
+fig3.update_layout(xaxis_title="Meses",yaxis_title="Carregamento (%)",width=1500, height=680)
+# Mostrar o gráfico usando Streamlit
+st.plotly_chart(fig3)
 
 ########################################################################################################################
 st.divider()

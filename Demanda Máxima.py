@@ -13,11 +13,25 @@ import numpy as np
 max_date_time = None
 ################################################################
 print("Importando Base de Dados Agrupada\n")
-url_base = r"C:\Users\Engeselt\Documents\GitHub\ASPO_2\Medição Agrupada.csv"
+url_base = "Medição Agrupada.csv"
 df_base = pd.read_csv(url_base, sep=";", encoding='latin-1')
-df_base['DATA_HORA'] = pd.to_datetime(df_base['DATA_HORA'])
-#df_base['DATA_HORA'] = pd.to_datetime(df_base['DATA_HORA'], format="%d/%m/%Y %H:%M")
 
+# Converter a coluna DATA_HORA para datetime com tratamento de erros
+try:
+    # Primeiro tenta converter com o formato padrão
+    df_base['DATA_HORA'] = pd.to_datetime(df_base['DATA_HORA'], format='%Y-%m-%d %H:%M:%S')
+except ValueError:
+    try:
+        # Se falhar, tenta converter apenas a data
+        df_base['DATA_HORA'] = pd.to_datetime(df_base['DATA_HORA'], format='%Y-%m-%d')
+    except ValueError:
+        # Se ainda falhar, tenta inferir o formato
+        df_base['DATA_HORA'] = pd.to_datetime(df_base['DATA_HORA'], errors='coerce')
+
+# Remover linhas com datas inválidas
+df_base = df_base.dropna(subset=['DATA_HORA'])
+
+# Definir DATA_HORA como índice
 df_base = df_base.set_index(['DATA_HORA'])
 
 df_base.info
@@ -30,13 +44,13 @@ print(df_base)
 print("\nImportação Concluída")
 
 
-url_atributos = r"C:\Users\Engeselt\Documents\GitHub\ASPO_2\Tabela informativa.xlsx"
+url_atributos = "Tabela informativa.xlsx"
 df_atributos_Dados = pd.read_excel(url_atributos, sheet_name = "Dados")
 df_atributos_Dados.dropna(subset=['Codigo'], inplace=True)
 
 ##########DADOS TéCNICOS################
 
-url_atributos = r"C:\Users\Engeselt\Documents\GitHub\ASPO_2\Tabela informativa.xlsx"
+url_atributos = "Tabela informativa.xlsx"
 df_atributos = pd.read_excel(url_atributos, sheet_name = "Dados Técnicos")
 df_atributos.dropna(subset=['Cód. do Trafo/Alimentador'], inplace=True)
 print(df_atributos)
@@ -317,7 +331,7 @@ df_dados_com_meses_anos_S.loc[df_dados_com_meses_anos_S['Tipo'] == 'Alimentador'
 ################################### EXPORTANDO O ARQUIVO ###############################################################
 
 print('\nExportando para Excel...')
-dir = r"C:\Users\Engeselt\Documents\GitHub\ASPO_2\Demanda_Máxima_Não_Coincidente.xlsx"
+dir = "Demanda_Máxima_Não_Coincidente.xlsx"
 
 # Primeira aba
 with pd.ExcelWriter(dir, engine='openpyxl', mode='w') as writer:

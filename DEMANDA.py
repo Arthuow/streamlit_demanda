@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 import io
 
 try:
-    df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente",engine="openpyxl")
+    df_maxima = pd.read_excel(r"C:\Users\Engeselt\Documents\Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente",engine="openpyxl")
 except Exception as e:
     st.error(f"Erro ao carregar o arquivo Demanda_Máxima_Não_Coincidente_Historica.xlsx: {str(e)}")
     st.error("Por favor, verifique se o arquivo existe e está no diretório correto.")

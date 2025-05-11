@@ -54,7 +54,7 @@ def importar_base_equipamentos():
 ########################################################################################################################
 # LENDO ARQUIVO EM EXCEL
 #url_atributos = r"C:\Users\Engeselt\Documents\Tabela informativa.xlsx"
-df_atributos = pd.read_excel('Tabela informativa.xlsx',sheet_name = "Dados")
+df_atributos = pd.read_excel(r"C:\Users\Engeselt\Documents\Tabela informativa.xlsx",sheet_name = "Dados")
 df_atributos.dropna(subset=['Codigo'], inplace=True)
 df_dados_tecnicos = pd.read_excel('Tabela informativa.xlsx',sheet_name='Dados Técnicos')
 df_dados_tecnicos['Cód. do Trafo/Alimentador'] = df_dados_tecnicos['Cód. do Trafo/Alimentador'].astype(str)

@@ -21,11 +21,25 @@ df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", she
 @st.cache_data
 def importa_base():
     print("Importando Base de Dados Agrupada\n")
-    #url_base = r"C:\Users\Engeselt\Documents\GitHub\ASPO_2\Medição Agrupada.csv"
-    df_base = pd.read_csv("Medição Agrupada.csv", sep=";", encoding='latin-1').set_index(['DATA_HORA'])
-    print(df_base)
-    print("\nImportação Concluída")
-    return df_base
+    try:
+        # Ler o arquivo CSV
+        df_base = pd.read_csv("Medição Agrupada.csv", sep=";", encoding='latin-1')
+        
+        # Converter a coluna DATA_HORA para datetime
+        df_base['DATA_HORA'] = pd.to_datetime(df_base['DATA_HORA'], errors='coerce')
+        
+        # Remover linhas com datas inválidas
+        df_base = df_base.dropna(subset=['DATA_HORA'])
+        
+        # Definir DATA_HORA como índice
+        df_base.set_index('DATA_HORA', inplace=True)
+        
+        print(df_base)
+        print("\nImportação Concluída")
+        return df_base
+    except Exception as e:
+        st.error(f"Erro ao importar base de dados: {str(e)}")
+        return None
 
 df_equipamentos = None
 def importar_base_equipamentos():
@@ -101,7 +115,6 @@ descricao_saida_Q = df_atributos.loc[indice_saida_Q, 'descricao']
 descricao_saida_Q=str(descricao_saida_Q)
 
 base=importa_base()
-base.index = pd.to_datetime(base.index)
 data_d_minus_1 = datetime.today() - timedelta(days=1)
 base = base[base.index < data_d_minus_1]
 

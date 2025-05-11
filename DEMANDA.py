@@ -16,16 +16,27 @@ from datetime import datetime, timedelta
 import io
 
 
-df_maxima = pd.read_excel(r"C:\Users\Engeselt\Documents\GitHub\streamlit_demanda\Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente")
+df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente")
 
 @st.cache_data
 def importa_base():
     print("Importando Base de Dados Agrupada\n")
-    #url_base = r"C:\Users\Engeselt\Documents\GitHub\ASPO_2\Medição Agrupada.csv"
-    df_base = pd.read_csv("Medição Agrupada.csv", sep=";", encoding='latin-1').set_index(['DATA_HORA'])
-    print(df_base)
-    print("\nImportação Concluída")
-    return df_base
+    try:
+        # Read the CSV file
+        df_base = pd.read_csv("Medição Agrupada.csv", sep=";", encoding='latin-1')
+        
+        # Convert DATA_HORA to datetime with flexible parsing
+        df_base['DATA_HORA'] = pd.to_datetime(df_base['DATA_HORA'], format='mixed')
+        
+        # Set the index
+        df_base = df_base.set_index(['DATA_HORA'])
+        
+        print(df_base)
+        print("\nImportação Concluída")
+        return df_base
+    except Exception as e:
+        st.error(f"Erro ao importar base de dados: {str(e)}")
+        return None
 
 df_equipamentos = None
 def importar_base_equipamentos():
@@ -101,7 +112,11 @@ descricao_saida_Q = df_atributos.loc[indice_saida_Q, 'descricao']
 descricao_saida_Q=str(descricao_saida_Q)
 
 base=importa_base()
-base.index = pd.to_datetime(base.index)
+if base is None:
+    st.error("Não foi possível carregar a base de dados. Por favor, verifique o arquivo CSV.")
+    st.stop()
+
+base.index = pd.to_datetime(base.index, format='mixed')
 data_d_minus_1 = datetime.today() - timedelta(days=1)
 base = base[base.index < data_d_minus_1]
 

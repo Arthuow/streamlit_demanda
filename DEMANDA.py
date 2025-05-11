@@ -16,8 +16,6 @@ from datetime import datetime, timedelta
 import io
 
 
-df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente")
-
 @st.cache_data
 def importa_base():
     print("Importando Base de Dados Agrupada\n")
@@ -53,6 +51,7 @@ def importar_base_equipamentos():
 ########################################################################################################################
 # LENDO ARQUIVO EM EXCEL
 #url_atributos = r"C:\Users\Engeselt\Documents\Tabela informativa.xlsx"
+
 df_atributos = pd.read_excel('Tabela informativa.xlsx',sheet_name = "Dados")
 df_atributos.dropna(subset=['Codigo'], inplace=True)
 df_dados_tecnicos = pd.read_excel('Tabela informativa.xlsx',sheet_name='Dados Técnicos')
@@ -281,6 +280,7 @@ else:
 
 #########################################3 DEMANDA MÁXIMAS DE 2022 #####################################################
 st.divider()
+df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente")
 
 #df_maxima_2 = pd.read_excel("Valores_maximos_P_meses.xlsx", sheet_name="Potência Ativa Máxima")
 #st.header('Demandas Máximas de 2022')

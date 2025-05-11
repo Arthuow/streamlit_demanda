@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 import io
 
 
- #df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente",engine="openpyxl")
+
 
 
 @st.cache_data
@@ -282,7 +282,7 @@ else:
 
 #########################################3 DEMANDA MÁXIMAS DE 2022 #####################################################
 st.divider()
-
+df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente",engine="openpyxl")
 #df_maxima_2 = pd.read_excel("Valores_maximos_P_meses.xlsx", sheet_name="Potência Ativa Máxima")
 #st.header('Demandas Máximas de 2022')
 if "TR" in selecao:

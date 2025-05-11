@@ -15,8 +15,12 @@ import gc
 from datetime import datetime, timedelta
 import io
 
-
-df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente")
+try:
+    df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente")
+except Exception as e:
+    st.error(f"Erro ao carregar o arquivo Demanda_Máxima_Não_Coincidente_Historica.xlsx: {str(e)}")
+    st.error("Por favor, verifique se o arquivo existe e está no diretório correto.")
+    st.stop()
 
 @st.cache_data
 def importa_base():

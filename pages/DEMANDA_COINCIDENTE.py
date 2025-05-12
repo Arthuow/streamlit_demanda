@@ -7,6 +7,9 @@ import sqlite3 as sql
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import os
 
+# Garante que o diretório 'exportado' existe
+os.makedirs('exportado', exist_ok=True)
+
 st.set_page_config(page_title="Demanda Coincidente", page_icon='icone', layout='wide')
 
 st.header('Demanda Coincidente')
@@ -173,12 +176,8 @@ if st.button("Calcular"):
             output = io.BytesIO()
             resultados_df.to_excel(output, index=False, sheet_name='Resultados')
             
-            # Criar diretório exportado se não existir
-            export_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'exportado')
-            os.makedirs(export_dir, exist_ok=True)
-            
             # Salvar arquivo no diretório exportado
-            export_path = os.path.join(export_dir, f"demanda_coincidente_{data_hora_coincidente.strftime('%Y%m%d_%H%M')}.xlsx")
+            export_path = os.path.join('exportado', f"demanda_coincidente_{data_hora_coincidente.strftime('%Y%m%d_%H%M')}.xlsx")
             resultados_df.to_excel(export_path, index=False, sheet_name='Resultados')
             
             # Botão de download

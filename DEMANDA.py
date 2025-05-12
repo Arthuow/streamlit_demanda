@@ -21,7 +21,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('demanda.log'),
+        logging.FileHandler('exportado/demanda.log'),
         logging.StreamHandler()
     ]
 )
@@ -37,7 +37,7 @@ def importa_base():
     logger.info("Importando Base de Dados Agrupada")
     try:
         # Read the CSV file
-        df_base = pd.read_csv("Medição Agrupada.csv", sep=";", encoding='latin-1')
+        df_base = pd.read_csv("input/Medição Agrupada.csv", sep=";", encoding='latin-1')
         
         # Convert DATA_HORA to datetime with flexible parsing
         df_base['DATA_HORA'] = pd.to_datetime(df_base['DATA_HORA'], format='mixed')
@@ -59,7 +59,7 @@ def importar_base_equipamentos():
     if df_equipamentos is None:
         logger.info("Importando base de equipamentos")
         #url_equipamentos = r"C:\Users\Engeselt\Documents\Códigos dos Equipamentos.xlsx"
-        df_equipamentos = pd.read_excel('Códigos dos Equipamentos.xlsx', sheet_name='Códigos dos Equipamentos')
+        df_equipamentos = pd.read_excel('input/Códigos dos Equipamentos.xlsx', sheet_name='Códigos dos Equipamentos')
         df_equipamentos['Descricao'] = df_equipamentos['Descricao'].astype(str)
         logger.info("Importação da base de equipamentos concluída")
         return df_equipamentos
@@ -70,9 +70,9 @@ def importar_base_equipamentos():
 
 try:
     logger.info("Iniciando leitura do arquivo Tabela informativa.xlsx")
-    df_atributos = pd.read_excel('Tabela informativa.xlsx',sheet_name = "Dados")
+    df_atributos = pd.read_excel('input/Tabela informativa.xlsx',sheet_name = "Dados")
     df_atributos.dropna(subset=['Codigo'], inplace=True)
-    df_dados_tecnicos = pd.read_excel('Tabela informativa.xlsx',sheet_name='Dados Técnicos')
+    df_dados_tecnicos = pd.read_excel('input/Tabela informativa.xlsx',sheet_name='Dados Técnicos')
     df_dados_tecnicos['Cód. do Trafo/Alimentador'] = df_dados_tecnicos['Cód. do Trafo/Alimentador'].astype(str)
     logger.info("Arquivo Tabela informativa.xlsx lido com sucesso")
 except Exception as e:
@@ -405,7 +405,7 @@ dados_filtrados = dados_filtrados.drop(columns=['S', 'fp', 'ultrapassagem', 'DAT
 buffer = io.StringIO()
 dados_filtrados.to_csv(buffer, sep=';', encoding='latin-1')
 buffer.seek(0)
-file_name = f"{Equipamento}.csv"
+file_name = f"exportado/{Equipamento}.csv"
 st.download_button(
     label="Download",
     data=buffer.getvalue(),

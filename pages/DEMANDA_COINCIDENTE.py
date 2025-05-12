@@ -18,7 +18,7 @@ def load_initial_data():
     try:
         # Ajustando o caminho para a pasta raiz
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        excel_path = os.path.join(root_dir, 'Tabela informativa.xlsx')
+        excel_path = os.path.join(root_dir, 'input', 'Tabela informativa.xlsx')
         
         # Explicitly specify the engine as 'openpyxl'
         df_atributos = pd.read_excel(excel_path, sheet_name="Dados", engine='openpyxl')
@@ -32,7 +32,7 @@ def load_initial_data():
         
         return df_atributos, df_dados_tecnicos, df_atributos_Dados
     except FileNotFoundError:
-        st.error("Arquivo 'Tabela informativa.xlsx' não encontrado. Por favor, certifique-se de que o arquivo está na pasta raiz do projeto.")
+        st.error("Arquivo 'Tabela informativa.xlsx' não encontrado. Por favor, certifique-se de que o arquivo está na pasta input do projeto.")
         return None, None, None
     except Exception as e:
         st.error(f"Erro ao carregar arquivos: {str(e)}")
@@ -49,7 +49,7 @@ def load_measurement_data(data_hora):
     try:
         # Ajustando o caminho para a pasta raiz
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        csv_path = os.path.join(root_dir, "Medição Agrupada.csv")
+        csv_path = os.path.join(root_dir, "input", "Medição Agrupada.csv")
         
         # Ler apenas a linha específica do CSV
         df_base_original = pd.read_csv(
@@ -172,6 +172,16 @@ if st.button("Calcular"):
             # Exportação para Excel
             output = io.BytesIO()
             resultados_df.to_excel(output, index=False, sheet_name='Resultados')
+            
+            # Criar diretório exportado se não existir
+            export_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'exportado')
+            os.makedirs(export_dir, exist_ok=True)
+            
+            # Salvar arquivo no diretório exportado
+            export_path = os.path.join(export_dir, f"demanda_coincidente_{data_hora_coincidente.strftime('%Y%m%d_%H%M')}.xlsx")
+            resultados_df.to_excel(export_path, index=False, sheet_name='Resultados')
+            
+            # Botão de download
             st.download_button(
                 label="Exportar Dados (Excel)",
                 data=output.getvalue(),

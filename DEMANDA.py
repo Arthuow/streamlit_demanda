@@ -16,15 +16,17 @@ from datetime import datetime, timedelta
 import io
 import logging
 
-# Garante que o diretório 'exportado' existe
-os.makedirs('exportado', exist_ok=True)
+# Configurar diretório de logs
+log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'exportado')
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, 'demanda.log')
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('exportado/demanda.log'),
+        logging.FileHandler(log_file),
         logging.StreamHandler()
     ]
 )

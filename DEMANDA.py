@@ -16,6 +16,9 @@ from datetime import datetime, timedelta
 import io
 import logging
 
+# Garante que o diretório 'exportado' existe
+os.makedirs('exportado', exist_ok=True)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

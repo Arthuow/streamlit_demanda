@@ -17,25 +17,44 @@ import io
 import logging
 
 # Configurar diretório de logs
-log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'exportado')
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, 'demanda.log')
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+try:
+    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'exportado')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, 'demanda.log')
+    
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler()  # Always add console handler first
+        ]
+    )
+    
+    # Add file handler only if we can write to the file
+    try:
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        logging.getLogger().addHandler(file_handler)
+    except Exception as e:
+        print(f"Warning: Could not set up file logging: {str(e)}")
+    
+    logger = logging.getLogger(__name__)
+except Exception as e:
+    print(f"Error setting up logging: {str(e)}")
+    logger = logging.getLogger(__name__)
 
 # Configuração da página Streamlit - DEVE SER A PRIMEIRA CHAMADA STREAMLIT
 st.set_page_config(page_title="Energisa Mato Grosso", page_icon='icone', layout='wide')
 
-#df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente",engine="openpyxl")
+# Carregar dados de demanda máxima
+try:
+    df_maxima = pd.read_excel("input/Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente", engine="openpyxl")
+    logger.info("Dados de demanda máxima carregados com sucesso")
+except Exception as e:
+    logger.error(f"Erro ao carregar dados de demanda máxima: {str(e)}")
+    st.error("Erro ao carregar dados de demanda máxima. Verifique se o arquivo existe no diretório input/")
+    df_maxima = pd.DataFrame()  # Criar DataFrame vazio para evitar erros
 
 @st.cache_data
 def importa_base():

@@ -8,13 +8,30 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import os
 
 st.set_page_config(page_title="Operação",page_icon='icone',layout='wide')
+
+# Função para carregar dados com tratamento de erro
+def carregar_dados_excel(arquivo, sheet_name):
+    try:
+        caminho_arquivo = os.path.join('input', arquivo)
+        if not os.path.exists(caminho_arquivo):
+            st.error(f"Arquivo não encontrado: {caminho_arquivo}")
+            return None
+        return pd.read_excel(caminho_arquivo, sheet_name=sheet_name)
+    except Exception as e:
+        st.error(f"Erro ao carregar {arquivo}: {str(e)}")
+        return None
+
 # Carregar os dados do Excel
-url = "Demanda_Máxima_Semana.xlsx"
-df = pd.read_excel(url, sheet_name="Potência Ativa")
+df = carregar_dados_excel("Demanda_Máxima_Semana.xlsx", "Potência Ativa")
+if df is None:
+    st.error("Não foi possível carregar os dados da demanda máxima semanal.")
+    st.stop()
 
 # Carregar dados de demanda máxima
-url_demanda_maxima = "Demanda_Máxima_Não_Coincidente.xlsx"
-df_demanda_maxima = pd.read_excel(url_demanda_maxima, sheet_name="Potência Aparente")
+df_demanda_maxima = carregar_dados_excel("Demanda_Máxima_Não_Coincidente.xlsx", "Potência Aparente")
+if df_demanda_maxima is None:
+    st.error("Não foi possível carregar os dados da demanda máxima não coincidente.")
+    st.stop()
 
 # Título da aplicação
 st.title("Potência Máxima Semanal - kVA")
@@ -161,139 +178,92 @@ if not df_demanda_maxima_filtrado.empty:
 
 st.subheader("Demanda Máxima Mensal")
 #abrir o arquivo excel de demanda máxima mensal
-url_demanda_maxima_mensal = "Demanda_Máxima_Não_Coincidente.xlsx"
-df_demanda_maxima_mensal = pd.read_excel(url_demanda_maxima_mensal, sheet_name="Potência Aparente")
+df_demanda_maxima_mensal = carregar_dados_excel("Demanda_Máxima_Não_Coincidente.xlsx", "Potência Aparente")
+if df_demanda_maxima_mensal is None:
+    st.error("Não foi possível carregar os dados da demanda máxima mensal.")
+    st.stop()
 
 #criar banco de dados sqlite
-conn = sql.connect('demanda_maxima_mensal.db')
-cursor = conn.cursor()
+try:
+    conn = sql.connect('demanda_maxima_mensal.db')
+    cursor = conn.cursor()
+except Exception as e:
+    st.error(f"Erro ao conectar ao banco de dados: {str(e)}")
+    st.stop()
 
 #criar tabela se não existir
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS demanda_maxima_mensal (
-        "Cód. do Trafo/Alimentador" TEXT,
-        "Descrição" TEXT,
-        "Cód. de Ident" TEXT,
-        "Barra ANAREDE" TEXT,
-        "Tensão Prim" FLOAT,
-        "Tensão Sec. (kV)" FLOAT,
-        "Potencia Instalada" FLOAT,
-        "Janeiro 2024" FLOAT,
-        "Fevereiro 2024" FLOAT,
-        "Março 2024" FLOAT,
-        "Abril 2024" FLOAT,
-        "Maio 2024" FLOAT,
-        "Junho 2024" FLOAT,
-        "Julho 2024" FLOAT,
-        "Agosto 2024" FLOAT,
-        "Setembro 2024" FLOAT,
-        "Outubro 2024" FLOAT,
-        "Novembro 2024" FLOAT,
-        "Dezembro 2024" FLOAT,
-        "Janeiro 2025" FLOAT,
-        "Fevereiro 2025" FLOAT,
-        "Março 2025" FLOAT,
-        "Abril 2025" FLOAT,   
-        "Maio 2025" FLOAT,        
-        "Junho 2025" FLOAT,
-        "Julho 2025" FLOAT,
-        "Agosto 2025" FLOAT,
-        "Setembro 2025" FLOAT,
-        "Outubro 2025" FLOAT,
-        "Novembro 2025" FLOAT,
-        "Dezembro 2025" FLOAT,        
-        "Pot. Máxima" FLOAT,
-        "Carregamento" FLOAT
-    )
-""")
+try:
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS demanda_maxima_mensal (
+            "Cód. do Trafo/Alimentador" TEXT,
+            "Descrição" TEXT,
+            "Cód. de Ident" TEXT,
+            "Barra ANAREDE" TEXT,
+            "Tensão Prim" FLOAT,
+            "Tensão Sec. (kV)" FLOAT,
+            "Potencia Instalada" FLOAT,
+            "Janeiro 2024" FLOAT,
+            "Fevereiro 2024" FLOAT,
+            "Março 2024" FLOAT,
+            "Abril 2024" FLOAT,
+            "Maio 2024" FLOAT,
+            "Junho 2024" FLOAT,
+            "Julho 2024" FLOAT,
+            "Agosto 2024" FLOAT,
+            "Setembro 2024" FLOAT,
+            "Outubro 2024" FLOAT,
+            "Novembro 2024" FLOAT,
+            "Dezembro 2024" FLOAT,
+            "Janeiro 2025" FLOAT,
+            "Fevereiro 2025" FLOAT,
+            "Março 2025" FLOAT,
+            "Abril 2025" FLOAT,   
+            "Maio 2025" FLOAT,        
+            "Junho 2025" FLOAT,
+            "Julho 2025" FLOAT,
+            "Agosto 2025" FLOAT,
+            "Setembro 2025" FLOAT,
+            "Outubro 2025" FLOAT,
+            "Novembro 2025" FLOAT,
+            "Dezembro 2025" FLOAT,        
+            "Pot. Máxima" FLOAT,
+            "Carregamento" FLOAT
+        )
+    """)
+except Exception as e:
+    st.error(f"Erro ao criar tabela: {str(e)}")
+    conn.close()
+    st.stop()
 
 #salvar o dataframe no banco de dados
-# Arredondar todas as colunas numéricas para 2 casas decimais
-colunas_numericas = df_demanda_maxima_mensal.select_dtypes(include=[np.number]).columns
-df_demanda_maxima_mensal[colunas_numericas] = df_demanda_maxima_mensal[colunas_numericas].round(2)
+try:
+    # Arredondar todas as colunas numéricas para 2 casas decimais
+    colunas_numericas = df_demanda_maxima_mensal.select_dtypes(include=[np.number]).columns
+    df_demanda_maxima_mensal[colunas_numericas] = df_demanda_maxima_mensal[colunas_numericas].round(2)
 
-# Formatar os números no padrão brasileiro
-for coluna in colunas_numericas:
-    df_demanda_maxima_mensal[coluna] = df_demanda_maxima_mensal[coluna].apply(
-        lambda x: '{:,.2f}'.format(x).replace('.', '|').replace(',', '.').replace('|', ',') if pd.notnull(x) else x
-    )
+    # Formatar os números no padrão brasileiro
+    for coluna in colunas_numericas:
+        df_demanda_maxima_mensal[coluna] = df_demanda_maxima_mensal[coluna].apply(
+            lambda x: '{:,.2f}'.format(x).replace('.', '|').replace(',', '.').replace('|', ',') if pd.notnull(x) else x
+        )
 
-df_demanda_maxima_mensal.to_sql('demanda_maxima_mensal', conn, if_exists='replace', index=False)
+    df_demanda_maxima_mensal.to_sql('demanda_maxima_mensal', conn, if_exists='replace', index=False)
+except Exception as e:
+    st.error(f"Erro ao salvar dados no banco: {str(e)}")
+    conn.close()
+    st.stop()
 
 #fechar a conexão
 conn.close()    
-# abrir o banco de dados sqlite convertendo para dataframe
-conn = sql.connect('demanda_maxima_mensal.db')
-cursor = conn.cursor()
-df_demanda_maxima_mensal = pd.read_sql_query("SELECT * FROM demanda_maxima_mensal", conn)
-
-# configurando AgGrid
-gb = GridOptionsBuilder.from_dataframe(df_demanda_maxima_mensal)
-
-# Configurações de paginação e layout
-gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)  # 20 linhas por página
-gb.configure_side_bar()  # barra lateral com filtros
-
-# Configurações de colunas
-gb.configure_default_column(
-    groupable=True,
-    value=True,
-    enableRowGroup=True,
-    editable=False,
-    filter=True,
-    width=150,  # largura fixa para todas as colunas
-    resizable=True,  # permite redimensionar
-    sortable=True,  # permite ordenar
-)
-
-# Configurações específicas para colunas de texto
-colunas_texto = ['Cód. do Trafo/Alimentador', 'Descrição', 'Cód. de Ident', 'Barra ANAREDE']
-for col in colunas_texto:
-    gb.configure_column(col, width=200)  # colunas de texto mais largas
-
-# Configurações específicas para colunas numéricas
-colunas_numericas = df_demanda_maxima_mensal.select_dtypes(include=[np.number]).columns
-for col in colunas_numericas:
-    gb.configure_column(col, width=120)  # colunas numéricas mais estreitas
-
-gridOptions = gb.build()
-
-# Exibir a tabela com tamanho fixo
-AgGrid(
-    df_demanda_maxima_mensal,
-    gridOptions=gridOptions,
-    fit_columns_on_grid_load=False,  # não ajusta automaticamente
-    height=600,  # altura fixa
-    width='100%',  # largura total
-    theme='streamlit',  # tema
-    enable_enterprise_modules=True,  # recursos avançados
-    update_mode=GridUpdateMode.MODEL_CHANGED,  # atualização automática
-    allow_unsafe_jscode=True,  # permite código JavaScript personalizado
-)
-
-# Criar um buffer para o arquivo Excel
-output = io.BytesIO()
-with pd.ExcelWriter(output, engine='openpyxl') as writer:
-    df_demanda_maxima_mensal.to_excel(writer, sheet_name='Demanda Máxima Mensal', index=False)
-    writer.close()
-    excel_data = output.getvalue()
-
-# Botão de download
-st.download_button(
-    label="📥 Baixar Tabela em Excel",
-    data=excel_data,
-    file_name="Carregamento.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
-
-st.markdown("---")
-
-st.title("Ajustes de proteção dos equipamentos - Pickup")
 
 # abrir o banco de dados sqlite convertendo para dataframe
-conn = sql.connect('equipamentos.db')
-cursor = conn.cursor()
-df_equipamentos = pd.read_sql_query("SELECT * FROM equipamentos", conn)
+try:
+    conn = sql.connect('equipamentos.db')
+    cursor = conn.cursor()
+    df_equipamentos = pd.read_sql_query("SELECT * FROM equipamentos", conn)
+except Exception as e:
+    st.error(f"Erro ao carregar dados dos equipamentos: {str(e)}")
+    st.stop()
 
 # criar multiselect com a coluna Subestação, inicialmente exibir todos os dados
 subestacao = st.multiselect(

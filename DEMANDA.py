@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 # Configuração da página Streamlit - DEVE SER A PRIMEIRA CHAMADA STREAMLIT
 st.set_page_config(page_title="Energisa Mato Grosso", page_icon='icone', layout='wide')
 
+#df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente",engine="openpyxl")
+
 @st.cache_data
 def importa_base():
     logger.info("Importando Base de Dados Agrupada")
@@ -324,7 +326,6 @@ else:
 
 #########################################3 DEMANDA MÁXIMAS DE 2022 #####################################################
 st.divider()
-df_maxima = pd.read_excel("Demanda_Máxima_Não_Coincidente_Historica.xlsx", sheet_name="Potência Aparente")
 
 #df_maxima_2 = pd.read_excel("Valores_maximos_P_meses.xlsx", sheet_name="Potência Ativa Máxima")
 #st.header('Demandas Máximas de 2022')

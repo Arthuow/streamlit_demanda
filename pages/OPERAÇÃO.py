@@ -258,6 +258,79 @@ conn.close()
 
 # abrir o banco de dados sqlite convertendo para dataframe
 try:
+    conn = sql.connect('demanda_maxima_mensal.db')
+    df_demanda_maxima_mensal = pd.read_sql_query("SELECT * FROM demanda_maxima_mensal", conn)
+    conn.close()
+
+    # configurando AgGrid
+    gb = GridOptionsBuilder.from_dataframe(df_demanda_maxima_mensal)
+
+    # Configurações de paginação e layout
+    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)  # 20 linhas por página
+    gb.configure_side_bar()  # barra lateral com filtros
+
+    # Configurações de colunas
+    gb.configure_default_column(
+        groupable=True,
+        value=True,
+        enableRowGroup=True,
+        editable=False,
+        filter=True,
+        width=150,  # largura fixa para todas as colunas
+        resizable=True,  # permite redimensionar
+        sortable=True,  # permite ordenar
+    )
+
+    # Configurações específicas para colunas de texto
+    colunas_texto = ['Cód. do Trafo/Alimentador', 'Descrição', 'Cód. de Ident', 'Barra ANAREDE']
+    for col in colunas_texto:
+        gb.configure_column(col, width=200)  # colunas de texto mais largas
+
+    # Configurações específicas para colunas numéricas
+    colunas_numericas = df_demanda_maxima_mensal.select_dtypes(include=[np.number]).columns
+    for col in colunas_numericas:
+        gb.configure_column(col, width=120)  # colunas numéricas mais estreitas
+
+    gridOptions = gb.build()
+
+    # Exibir a tabela com tamanho fixo
+    AgGrid(
+        df_demanda_maxima_mensal,
+        gridOptions=gridOptions,
+        fit_columns_on_grid_load=False,  # não ajusta automaticamente
+        height=600,  # altura fixa
+        width='100%',  # largura total
+        theme='streamlit',  # tema
+        enable_enterprise_modules=True,  # recursos avançados
+        update_mode=GridUpdateMode.MODEL_CHANGED,  # atualização automática
+        allow_unsafe_jscode=True,  # permite código JavaScript personalizado
+    )
+
+    # Criar um buffer para o arquivo Excel
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_demanda_maxima_mensal.to_excel(writer, sheet_name='Demanda Máxima Mensal', index=False)
+        writer.close()
+        excel_data = output.getvalue()
+
+    # Botão de download
+    st.download_button(
+        label="📥 Baixar Tabela em Excel",
+        data=excel_data,
+        file_name="Carregamento.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+except Exception as e:
+    st.error(f"Erro ao carregar dados da demanda máxima mensal: {str(e)}")
+    st.stop()
+
+st.markdown("---")
+
+st.title("Ajustes de proteção dos equipamentos - Pickup")
+
+# abrir o banco de dados sqlite convertendo para dataframe
+try:
     conn = sql.connect('equipamentos.db')
     cursor = conn.cursor()
     df_equipamentos = pd.read_sql_query("SELECT * FROM equipamentos", conn)
